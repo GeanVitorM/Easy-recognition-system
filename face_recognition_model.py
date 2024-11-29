@@ -4,7 +4,7 @@ import cv2
 import face_recognition
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-import pickle  # Adicionando a importação do pickle para salvar e carregar o modelo
+import pickle 
 
 def capture_images(user_name, dataset_path):
     """Captura imagens da webcam e salva no diretório especificado para o usuário."""
@@ -14,9 +14,8 @@ def capture_images(user_name, dataset_path):
         return
 
     print(f"Capturando imagens para o usuário '{user_name}'. Olhe para a câmera e pressione 'q' para sair.")
-    max_images = 30  # Número máximo de imagens
+    max_images = 30 
     
-    # Verificar se já existe uma pasta válida para o usuário
     user_path = os.path.abspath(os.path.join(dataset_path, user_name))
     
     if not os.path.exists(user_path):
@@ -87,7 +86,7 @@ def train_model(dataset_path):
 
 def live_recognition(model):
     """Reconhecimento em tempo real usando a webcam."""
-    video_capture = cv2.VideoCapture(0)  # Inicializa a captura de vídeo
+    video_capture = cv2.VideoCapture(0)
     if not video_capture.isOpened():
         print("Erro ao acessar a câmera!")
         return
@@ -95,15 +94,13 @@ def live_recognition(model):
     print("Reconhecimento ao vivo iniciado. Pressione 'q' para encerrar.")
 
     while True:
-        ret, frame = video_capture.read()  # Lê o quadro da câmera
+        ret, frame = video_capture.read()
         if not ret:
             print("Falha ao capturar imagem. Verifique a câmera.")
-            continue  # Tenta capturar novamente no próximo loop
+            continue
         
-        # Converter para RGB
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Detectar rostos no quadro
         face_locations = face_recognition.face_locations(rgb_frame)
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
@@ -111,7 +108,6 @@ def live_recognition(model):
             try:
                 name = "Desconhecido"
                 if model:
-                    # Previsão do modelo
                     matches = model.predict([face_encoding])
                     if matches:
                         name = matches[0]
@@ -119,24 +115,18 @@ def live_recognition(model):
                 print(f"Erro durante a previsão: {e}")
                 name = "Erro"
 
-            # Desenhar retângulo ao redor do rosto
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
 
-            # Escrever o nome acima do rosto
             cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
 
-        # Exibir o quadro no feed de vídeo
         cv2.imshow('Reconhecimento em Tempo Real', frame)
 
-        # Verifica se a tecla 'q' foi pressionada para encerrar
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Reconhecimento encerrado pelo usuário.")
             break
 
-    # Libera a câmera e fecha a janela quando o loop for interrompido
     video_capture.release()
     cv2.destroyAllWindows()
-
 
 
 def save_model(model, model_path):

@@ -1,6 +1,5 @@
-# main.py
 import os
-import pickle  # Adicionando a importação do pickle
+import pickle 
 from face_recognition_model import capture_images, train_model, save_model, live_recognition
 
 def main():
@@ -12,7 +11,6 @@ def main():
     choice = input("Digite o número da funcionalidade desejada (1 ou 2): ")
 
     if choice == "1":
-        # Função para treinamento do modelo
         print("Iniciando treinamento do modelo...")
         user_name = input("Digite o nome do usuário: ")
         dataset_path = f'./dataset/{user_name}'
@@ -29,13 +27,12 @@ def main():
 
         if model:
             model_path = './Models/trained_model.pkl'
-            save_model(model, model_path)  # Função que salva o modelo
+            save_model(model, model_path) 
             print(f"Modelo treinado e salvo em {model_path} com sucesso!")
         else:
             print("Falha ao treinar o modelo!")
 
     elif choice == "2":
-        # Função para reconhecimento ao vivo
         print("Iniciando reconhecimento ao vivo...")
         model_path = './Models/trained_model.pkl'
 
