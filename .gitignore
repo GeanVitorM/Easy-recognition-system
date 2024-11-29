@@ -4,6 +4,7 @@ env/
 
 # Ignore arquivos compilados do Python
 __pycache__/
+*.cpython-311.pyc
 *.pyc
 *.pyo
 
@@ -16,4 +17,5 @@ __pycache__/
 *.sqlite3
 
 #ignorando os arquivos da pasta dataset
-dataset/*.jpg
+dataset/
+Models/

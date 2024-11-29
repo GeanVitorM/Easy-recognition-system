@@ -14,13 +14,16 @@ def capture_images(user_name, dataset_path):
         return
 
     print(f"Capturando imagens para o usuário '{user_name}'. Olhe para a câmera e pressione 'q' para sair.")
-    count = 0
     max_images = 30  # Número máximo de imagens
-    user_path = os.path.join(dataset_path, user_name)
+    
+    # Verificar se já existe uma pasta válida para o usuário
+    user_path = os.path.abspath(os.path.join(dataset_path, user_name))
     
     if not os.path.exists(user_path):
+        print(f"Criando diretório para o usuário: {user_path}")
         os.makedirs(user_path)
 
+    count = 0
     while count < max_images:
         ret, frame = cap.read()
         if not ret:
@@ -35,10 +38,8 @@ def capture_images(user_name, dataset_path):
                 top, right, bottom, left = face_location
                 face_image = frame[top:bottom, left:right]
                 image_path = os.path.join(user_path, f"{user_name}_{count}.jpg")
-                while os.path.exists(image_path):  # Evita sobrescrever
-                    count += 1
-                    image_path = os.path.join(user_path, f"{user_name}_{count}.jpg")
                 cv2.imwrite(image_path, face_image)
+                print(f"Imagem salva: {image_path}")
                 count += 1
         else:
             print("Nenhum rosto detectado.")
@@ -49,6 +50,7 @@ def capture_images(user_name, dataset_path):
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 def prepare_dataset(dataset_path):
     """Prepara o dataset, convertendo as imagens em encodings."""
