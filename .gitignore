@@ -1,0 +1,19 @@
+# Ignore as pastas de ambiente virtual
+venv/
+env/
+
+# Ignore arquivos compilados do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore arquivos de configuração do IDE
+.vscode/
+.idea/
+
+# Ignore arquivos de dependências locais
+*.log
+*.sqlite3
+
+#ignorando os arquivos da pasta dataset
+dataset/*.jpg
