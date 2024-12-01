@@ -1,139 +1,143 @@
-# face_recognition_model.py
 import os
 import cv2
-import face_recognition
 import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
-import pickle 
+import face_recognition
+from sklearn.svm import SVC
+import pickle
 
-def capture_images(user_name, dataset_path):
-    """Captura imagens da webcam e salva no diretório especificado para o usuário."""
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Erro ao acessar a câmera!")
-        return
-
-    print(f"Capturando imagens para o usuário '{user_name}'. Olhe para a câmera e pressione 'q' para sair.")
-    max_images = 30 
+# Função para cadastro de fotos de usuários
+def cadastrar_usuario(usuario_nome, dataset_path, num_fotos=30):
+    """Cadastra um novo usuário capturando fotos e salvando no dataset."""
+    usuario_path = os.path.join(dataset_path, usuario_nome)
+    os.makedirs(usuario_path, exist_ok=True)
     
-    user_path = os.path.abspath(os.path.join(dataset_path, user_name))
-    
-    if not os.path.exists(user_path):
-        print(f"Criando diretório para o usuário: {user_path}")
-        os.makedirs(user_path)
+    camera = cv2.VideoCapture(0)
+    contador_fotos = 0
 
-    count = 0
-    while count < max_images:
-        ret, frame = cap.read()
+    print(f"Iniciando captura de imagens para o usuário: {usuario_nome}")
+    
+    while contador_fotos < num_fotos:
+        ret, frame = camera.read()
         if not ret:
-            print("Falha ao capturar imagem da webcam.")
+            print("Erro ao acessar a câmera.")
             break
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_frame)
-
-        if face_locations:
-            for face_location in face_locations:
-                top, right, bottom, left = face_location
-                face_image = frame[top:bottom, left:right]
-                image_path = os.path.join(user_path, f"{user_name}_{count}.jpg")
-                cv2.imwrite(image_path, face_image)
-                print(f"Imagem salva: {image_path}")
-                count += 1
-        else:
-            print("Nenhum rosto detectado.")
-
-        cv2.imshow('Captura de Imagens', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        cv2.imshow("Captura de Imagens", frame)
+        k = cv2.waitKey(1) & 0xFF
+        
+        if k == ord('q'):  # Permitir sair manualmente
+            print("Captura interrompida pelo usuário.")
             break
 
-    cap.release()
+        # Salvar a imagem
+        foto_path = os.path.join(usuario_path, f"{usuario_nome}_{contador_fotos}.jpg")
+        cv2.imwrite(foto_path, frame)
+        print(f"Imagem salva: {foto_path}")
+        contador_fotos += 1
+
+    camera.release()
     cv2.destroyAllWindows()
 
+    if contador_fotos == num_fotos:
+        print(f"{num_fotos} imagens capturadas para o usuário: {usuario_nome}")
+    else:
+        print(f"Captura encerrada com {contador_fotos} imagens.")
 
-def prepare_dataset(dataset_path):
-    """Prepara o dataset, convertendo as imagens em encodings."""
+
+# Função para treinamento do modelo
+def treinar_modelo(dataset_path, modelo_path):
+    """Treina o modelo de reconhecimento facial com base no dataset."""
+    print("Treinando o modelo...")
     X, y = [], []
-    for person_name in os.listdir(dataset_path):
-        person_path = os.path.join(dataset_path, person_name)
-        if os.path.isdir(person_path):
-            for image_name in os.listdir(person_path):
-                image_path = os.path.join(person_path, image_name)
-                try:
-                    image = cv2.imread(image_path)
-                    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    face_locations = face_recognition.face_locations(rgb_image)
-                    if face_locations:
+
+    for root, dirs, files in os.walk(dataset_path):
+        if files:
+            person_name = os.path.basename(os.path.normpath(root))
+            for file in files:
+                if file.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    image_path = os.path.join(root, file)
+                    try:
+                        image = cv2.imread(image_path)
+                        if image is None:
+                            print(f"Falha ao carregar a imagem: {image_path}. Ignorando.")
+                            continue
+
+                        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                        face_locations = face_recognition.face_locations(rgb_image)
                         encodings = face_recognition.face_encodings(rgb_image, face_locations)
+
+                        if not encodings:
+                            print(f"Nenhum encoding encontrado para {image_path}. Ignorando.")
+                            continue
+
                         for encoding in encodings:
                             X.append(encoding)
                             y.append(person_name)
-                except Exception as e:
-                    print(f"Erro ao processar a imagem {image_path}: {e}")
-    return np.array(X), np.array(y)
+                    except Exception as e:
+                        print(f"Erro ao processar {image_path}: {e}")
 
-def train_model(dataset_path):
-    """Treina o modelo KNN com o dataset de imagens."""
-    X, y = prepare_dataset(dataset_path)
-
-    if X.size == 0:
-        print("Erro: Não há dados suficientes para treinamento!")
-        return None
-
-    knn = KNeighborsClassifier(n_neighbors=3)
-    knn.fit(X, y)
-    return knn
-
-def live_recognition(model):
-    """Reconhecimento em tempo real usando a webcam."""
-    video_capture = cv2.VideoCapture(0)
-    if not video_capture.isOpened():
-        print("Erro ao acessar a câmera!")
+    if len(set(y)) < 2:
+        print("Erro: O dataset deve conter pelo menos duas pessoas para treinar o modelo.")
         return
 
-    print("Reconhecimento ao vivo iniciado. Pressione 'q' para encerrar.")
+    print(f"Encodings preparados: {len(X)}, Classes: {set(y)}")
+    class_counts = {name: y.count(name) for name in set(y)}
+    print(f"Distribuição de classes: {class_counts}")
 
-    while True:
-        ret, frame = video_capture.read()
-        if not ret:
-            print("Falha ao capturar imagem. Verifique a câmera.")
-            continue
-        
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    # Treinamento do modelo
+    modelo = SVC(kernel='linear', probability=True)
+    modelo.fit(X, y)
 
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    # Salvar o modelo treinado
+    with open(modelo_path, 'wb') as f:
+        pickle.dump(modelo, f)
+    
+    print(f"Modelo treinado e salvo em: {modelo_path}")
 
-        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
-            try:
-                name = "Desconhecido"
-                if model:
-                    matches = model.predict([face_encoding])
+
+# Função para reconhecimento ao vivo
+def reconhecimento_ao_vivo(modelo_path):
+    """Faz o reconhecimento facial ao vivo com o modelo treinado."""
+    if os.path.exists(modelo_path):
+        try:
+            with open(modelo_path, 'rb') as f:
+                modelo = pickle.load(f)
+            print("Modelo carregado com sucesso!")
+
+            # Iniciar captura ao vivo
+            camera = cv2.VideoCapture(0)
+
+            while True:
+                ret, frame = camera.read()
+                if not ret:
+                    print("Erro ao acessar a câmera.")
+                    break
+
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                face_locations = face_recognition.face_locations(rgb_frame)
+                encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+
+                for encoding, location in zip(encodings, face_locations):
+                    matches = modelo.predict([encoding])
+
                     if matches:
                         name = matches[0]
-            except Exception as e:
-                print(f"Erro durante a previsão: {e}")
-                name = "Erro"
+                        print(f"Reconhecido: {name}")
 
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        # Desenhar a caixa ao redor do rosto
+                        top, right, bottom, left = location
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                        cv2.putText(frame, name, (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
-            cv2.putText(frame, name, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                cv2.imshow("Reconhecimento Facial Ao Vivo", frame)
 
-        cv2.imshow('Reconhecimento em Tempo Real', frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):  # Pressione 'q' para sair
+                    break
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("Reconhecimento encerrado pelo usuário.")
-            break
+            camera.release()
+            cv2.destroyAllWindows()
 
-    video_capture.release()
-    cv2.destroyAllWindows()
-
-
-def save_model(model, model_path):
-    """Salva o modelo treinado em um arquivo."""
-    try:
-        with open(model_path, 'wb') as f:
-            pickle.dump(model, f)
-        print(f"Modelo salvo em {model_path} com sucesso!")
-    except Exception as e:
-        print(f"Erro ao salvar o modelo: {e}")
+        except Exception as e:
+            print(f"Erro ao carregar o modelo: {e}")
+    else:
+        print(f"O modelo em {modelo_path} não foi encontrado. Certifique-se de treinar o modelo primeiro.")

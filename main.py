@@ -1,54 +1,36 @@
 import os
-import pickle 
-from face_recognition_model import capture_images, train_model, save_model, live_recognition
+from face_recognition_model import cadastrar_usuario, treinar_modelo, reconhecimento_ao_vivo
 
 def main():
     """Controla o fluxo principal do programa."""
-    print("Escolha a funcionalidade desejada:")
-    print("1 - Treinamento do modelo (capturar imagens e treinar)")
-    print("2 - Reconhecimento ao vivo")
-    
-    choice = input("Digite o número da funcionalidade desejada (1 ou 2): ")
+    while True:
+        print("\nEscolha a funcionalidade desejada:")
+        print("1 - Cadastrar novo usuário (capturar fotos)")
+        print("2 - Treinar modelo")
+        print("3 - Reconhecimento facial ao vivo")
+        print("0 - Encerrar")
+        
+        choice = input("Digite o número da funcionalidade desejada (1, 2, 3 ou 0): ").strip()
 
-    if choice == "1":
-        print("Iniciando treinamento do modelo...")
-        user_name = input("Digite o nome do usuário: ")
-        dataset_path = f'./dataset/{user_name}'
+        dataset_path = "./dataset"  # Diretório do dataset
+        modelo_path = "./modelo.pkl"  # Caminho para salvar o modelo treinado
 
-        if not os.path.exists(dataset_path):
-            os.makedirs(dataset_path)
-            print(f"Pasta do usuário '{user_name}' criada com sucesso!")
+        if choice == "1":
+            nome_usuario = input("Digite o nome do usuário: ").strip()
+            cadastrar_usuario(nome_usuario, dataset_path)
+        
+        elif choice == "2":
+            treinar_modelo(dataset_path, modelo_path)
+        
+        elif choice == "3":
+            reconhecimento_ao_vivo(modelo_path)
 
-        print(f"Agora, adicione as imagens para o usuário '{user_name}' na pasta './dataset/{user_name}'.")
-        capture_images(user_name, dataset_path)
+        elif choice == "0":
+            print("Encerrando o programa...")
+            break  # Encerra o loop e o programa
 
-        print("Treinando o modelo...")
-        model = train_model(dataset_path)
-
-        if model:
-            model_path = './Models/trained_model.pkl'
-            save_model(model, model_path) 
-            print(f"Modelo treinado e salvo em {model_path} com sucesso!")
         else:
-            print("Falha ao treinar o modelo!")
-
-    elif choice == "2":
-        print("Iniciando reconhecimento ao vivo...")
-        model_path = './Models/trained_model.pkl'
-
-        if os.path.exists(model_path):
-            try:
-                with open(model_path, 'rb') as f:
-                    model = pickle.load(f)
-                print("Modelo carregado com sucesso!")
-                live_recognition(model)
-            except Exception as e:
-                print(f"Erro ao carregar o modelo: {e}")
-        else:
-            print(f"O modelo em {model_path} não foi encontrado. Certifique-se de treinar o modelo primeiro.")
-
-    else:
-        print("Opção inválida. Por favor, escolha 1 ou 2.")
+            print("Opção inválida! Por favor, escolha 1, 2, 3 ou 0.")
 
 if __name__ == "__main__":
     main()
