@@ -13,7 +13,7 @@ def main():
         choice = input("Digite o número da funcionalidade desejada (1, 2, 3 ou 0): ").strip()
 
         dataset_path = "./dataset"  # Diretório do dataset
-        modelo_path = "./modelo.pkl"  # Caminho para salvar o modelo treinado
+        modelo_path = "./Models/modelo.pkl"  # Caminho para salvar o modelo treinado
 
         if choice == "1":
             nome_usuario = input("Digite o nome do usuário: ").strip()
