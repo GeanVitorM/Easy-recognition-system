@@ -12,8 +12,8 @@ def main():
         
         choice = input("Digite o número da funcionalidade desejada (1, 2, 3 ou 0): ").strip()
 
-        dataset_path = "./dataset"  # Diretório do dataset
-        modelo_path = "./Models/modelo.pkl"  # Caminho para salvar o modelo treinado
+        dataset_path = "./dataset"  
+        modelo_path = "./Models/modelo.pkl"  
 
         if choice == "1":
             nome_usuario = input("Digite o nome do usuário: ").strip()
@@ -27,7 +27,7 @@ def main():
 
         elif choice == "0":
             print("Encerrando o programa...")
-            break  # Encerra o loop e o programa
+            break  
 
         else:
             print("Opção inválida! Por favor, escolha 1, 2, 3 ou 0.")

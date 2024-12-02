@@ -5,7 +5,6 @@ import face_recognition
 from sklearn.svm import SVC
 import pickle
 
-# Função para cadastro de fotos de usuários
 def cadastrar_usuario(usuario_nome, dataset_path, num_fotos=30):
     """Cadastra um novo usuário capturando fotos e salvando no dataset."""
     usuario_path = os.path.join(dataset_path, usuario_nome)
@@ -25,11 +24,10 @@ def cadastrar_usuario(usuario_nome, dataset_path, num_fotos=30):
         cv2.imshow("Captura de Imagens", frame)
         k = cv2.waitKey(1) & 0xFF
         
-        if k == ord('q'):  # Permitir sair manualmente
+        if k == ord('q'):
             print("Captura interrompida pelo usuário.")
             break
 
-        # Salvar a imagem
         foto_path = os.path.join(usuario_path, f"{usuario_nome}_{contador_fotos}.jpg")
         cv2.imwrite(foto_path, frame)
         print(f"Imagem salva: {foto_path}")
@@ -44,7 +42,6 @@ def cadastrar_usuario(usuario_nome, dataset_path, num_fotos=30):
         print(f"Captura encerrada com {contador_fotos} imagens.")
 
 
-# Função para treinamento do modelo
 def treinar_modelo(dataset_path, modelo_path):
     """Treina o modelo de reconhecimento facial com base no dataset."""
     print("Treinando o modelo...")
@@ -84,18 +81,15 @@ def treinar_modelo(dataset_path, modelo_path):
     class_counts = {name: y.count(name) for name in set(y)}
     print(f"Distribuição de classes: {class_counts}")
 
-    # Treinamento do modelo
     modelo = SVC(kernel='linear', probability=True)
     modelo.fit(X, y)
 
-    # Salvar o modelo treinado
     with open(modelo_path, 'wb') as f:
         pickle.dump(modelo, f)
     
     print(f"Modelo treinado e salvo em: {modelo_path}")
 
 
-# Função para reconhecimento ao vivo
 def reconhecimento_ao_vivo(modelo_path):
     """Faz o reconhecimento facial ao vivo com o modelo treinado."""
     if os.path.exists(modelo_path):
@@ -104,7 +98,6 @@ def reconhecimento_ao_vivo(modelo_path):
                 modelo = pickle.load(f)
             print("Modelo carregado com sucesso!")
 
-            # Iniciar captura ao vivo
             camera = cv2.VideoCapture(0)
 
             while True:
@@ -124,14 +117,14 @@ def reconhecimento_ao_vivo(modelo_path):
                         name = matches[0]
                         print(f"Reconhecido: {name}")
 
-                        # Desenhar a caixa ao redor do rosto
+                        
                         top, right, bottom, left = location
                         cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
                         cv2.putText(frame, name, (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
                 cv2.imshow("Reconhecimento Facial Ao Vivo", frame)
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):  # Pressione 'q' para sair
+                if cv2.waitKey(1) & 0xFF == ord('q'):  
                     break
 
             camera.release()
